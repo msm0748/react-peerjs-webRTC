@@ -15,7 +15,11 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-  console.log('user is connected');
+  socket.on('join-room', (roomId, userId) => {
+    socket.join(roomId);
+    socket.broadcast.to(roomId).emit('user-connected', userId);
+    console.log(roomId, userId);
+  });
 
   socket.on('disconnect', () => {
     console.log('user is disconnected');
