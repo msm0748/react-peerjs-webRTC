@@ -1,5 +1,5 @@
 import Peer from 'peerjs';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { Socket } from 'socket.io-client';
 import { v4 as uuidV4 } from 'uuid';
@@ -9,11 +9,19 @@ interface Props {
   socket: Socket | null;
 }
 
+type PeerType = {
+  peerId: string;
+  stream: MediaStream;
+};
+
 export default function Room({ socket }: Props) {
   const { id: roomId } = useParams();
   const [myPeer, setMyPeer] = useState<Peer | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [peers, setPeers] = useState<PeerType[]>([]);
   // const location = useLocation();
+
+  console.log(peers, 'peerspeers');
 
   useEffect(() => {
     // const meId = location.state.userId;
@@ -33,6 +41,8 @@ export default function Room({ socket }: Props) {
   }, [myPeer, socket, roomId]);
 
   useEffect(() => {
+    if (!socket) return;
+    if (!myPeer) return;
     navigator.mediaDevices
       .getUserMedia({
         video: true,
@@ -40,8 +50,20 @@ export default function Room({ socket }: Props) {
       })
       .then((stream) => {
         setStream(stream);
+
+        myPeer.on('call', (call) => {
+          call.answer(stream);
+
+          call.on('stream', (userVideoStream) => {
+            console.log(userVideoStream, 'userVideoStream');
+          });
+        });
+
+        socket.on('user-connected', (peerId: string) => {
+          setPeers((prev) => [...prev, { peerId, stream }]);
+        });
       });
-  }, []);
+  }, [socket, myPeer]);
 
   useEffect(() => {
     if (!socket) return;
@@ -53,6 +75,7 @@ export default function Room({ socket }: Props) {
     <div>
       <h1>Room</h1>
       <Video stream={stream} />
+      {peers && Object.values(peers).map((peer) => <Video key={peer.peerId} stream={peer.stream} />)}
     </div>
   );
 }
