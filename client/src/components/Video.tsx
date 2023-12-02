@@ -1,6 +1,19 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
-export default function Video() {
+interface Props {
+  stream: MediaStream | null;
+}
+
+export default function Video({ stream }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  return <video ref={videoRef}>Video</video>;
+  useEffect(() => {
+    if (!stream) return;
+    if (videoRef.current) videoRef.current.srcObject = stream;
+  }, [stream]);
+
+  return (
+    <video ref={videoRef} muted={true} autoPlay>
+      Video
+    </video>
+  );
 }

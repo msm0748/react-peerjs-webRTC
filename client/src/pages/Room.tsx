@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { Socket } from 'socket.io-client';
 import { v4 as uuidV4 } from 'uuid';
+import Video from '../components/Video';
 
 interface Props {
   socket: Socket | null;
@@ -11,6 +12,7 @@ interface Props {
 export default function Room({ socket }: Props) {
   const { id: roomId } = useParams();
   const [myPeer, setMyPeer] = useState<Peer | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   // const location = useLocation();
 
   useEffect(() => {
@@ -31,10 +33,26 @@ export default function Room({ socket }: Props) {
   }, [myPeer, socket, roomId]);
 
   useEffect(() => {
+    navigator.mediaDevices
+      .getUserMedia({
+        video: true,
+        audio: true,
+      })
+      .then((stream) => {
+        setStream(stream);
+      });
+  }, []);
+
+  useEffect(() => {
     if (!socket) return;
     socket.on('user-connected', (userId: string) => {
       console.log('User connected', userId);
     });
   }, [socket]);
-  return <div>Room</div>;
+  return (
+    <div>
+      <h1>Room</h1>
+      <Video stream={stream} />
+    </div>
+  );
 }
