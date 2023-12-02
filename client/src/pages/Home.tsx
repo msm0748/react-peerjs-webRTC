@@ -21,7 +21,6 @@ export default function Home({ socket }: Props) {
 
   const handleEnter = () => {
     if (!socket) return;
-    // socket.emit('join-room', roomId, userId);
     navigate(`/room/${roomId}`, {
       state: {
         userId,

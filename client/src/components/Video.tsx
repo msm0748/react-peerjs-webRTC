@@ -12,7 +12,7 @@ export default function Video({ stream }: Props) {
   }, [stream]);
 
   return (
-    <video ref={videoRef} muted={true} autoPlay>
+    <video ref={videoRef} muted={true} autoPlay width={300} height={300}>
       Video
     </video>
   );

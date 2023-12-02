@@ -1,6 +1,6 @@
 import Peer from 'peerjs';
-import { useCallback, useEffect, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Socket } from 'socket.io-client';
 import { v4 as uuidV4 } from 'uuid';
 import Video from '../components/Video';
@@ -19,14 +19,9 @@ export default function Room({ socket }: Props) {
   const [myPeer, setMyPeer] = useState<Peer | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [peers, setPeers] = useState<PeerType[]>([]);
-  // const location = useLocation();
-
-  console.log(peers, 'peerspeers');
 
   useEffect(() => {
-    // const meId = location.state.userId;
     const meId = uuidV4();
-    console.log(meId, 'meId');
     const peer = new Peer(meId);
     setMyPeer(peer);
   }, []);
@@ -36,7 +31,6 @@ export default function Room({ socket }: Props) {
     if (!myPeer) return;
     myPeer.on('open', (id: string) => {
       socket.emit('join-room', roomId, id);
-      console.log(id, 'peerId');
     });
   }, [myPeer, socket, roomId]);
 
@@ -51,19 +45,28 @@ export default function Room({ socket }: Props) {
       .then((stream) => {
         setStream(stream);
 
-        myPeer.on('call', (call) => {
-          call.answer(stream);
-
-          call.on('stream', (userVideoStream) => {
-            console.log(userVideoStream, 'userVideoStream');
-          });
-        });
-
         socket.on('user-connected', (peerId: string) => {
           setPeers((prev) => [...prev, { peerId, stream }]);
+          myPeer.call(peerId, stream);
         });
       });
   }, [socket, myPeer]);
+
+  useEffect(() => {
+    if (!myPeer) return;
+    if (!stream) return;
+
+    myPeer.on('call', (call) => {
+      call.answer(stream);
+      let isLoading = true;
+      call.on('stream', (userVideoStream) => {
+        if (isLoading) {
+          setPeers((prev) => [...prev, { peerId: call.peer, stream: userVideoStream }]);
+        }
+        isLoading = false;
+      });
+    });
+  }, [myPeer, stream]);
 
   useEffect(() => {
     if (!socket) return;
