@@ -1,5 +1,9 @@
-import React from 'react';
+import { Socket } from 'socket.io-client';
 
-export default function Home() {
+interface Props {
+  socket: Socket;
+}
+
+export default function Home({ socket }: Props) {
   return <div>Home</div>;
 }
